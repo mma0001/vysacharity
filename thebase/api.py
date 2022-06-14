@@ -27,10 +27,12 @@ class Client:
         self._client_secret = client_secret
         self.items = Items(self._base_url + "/items")
         self.categories = Categories(self._base_url + "/categories")
+        self.item_categories = ItemCategories(self._base_url + "/item_categories")
 
     def set_token(self, token):
         self.items.set_token(token)
         self.categories.set_token(token)
+        self.item_categories.set_token(token)
 
     def authorize(self):
         query = {
@@ -102,6 +104,7 @@ class Items(Resources):
             "item_tax_type": 1,
             "stock": 1,
             "visible": 1,
+            "list_order": 1
         }
         resp = requests.post(
             self._base_url + "/add",
@@ -114,14 +117,13 @@ class Items(Resources):
         return resp.json()
 
     def add_image(self, item_id, img_url):
-        body = {
-            "item_id": item_id,
-            "image_no": 1,
-            "image_url": img_url
-        }
         resp = requests.post(
             self._base_url + "/add_image",
-            data=body,
+            data={
+                "item_id": item_id,
+                "image_no": 1,
+                "image_url": img_url
+            },
             headers={
                 "Authorization": f"bearer {self._token}"
             }
@@ -142,3 +144,21 @@ class Categories(Resources):
         )
         resp.raise_for_status()
         return resp.json()
+
+
+class ItemCategories(Resources):
+    def __init__(self, base_url):
+        super().__init__(base_url)
+
+    def add(self, item_id, category_id):
+        resp = requests.post(
+            self._base_url + "/add",
+            data={
+                "item_id": item_id,
+                "category_id": category_id
+            },
+            headers={
+                "Authorization": f"bearer {self._token}"
+            }
+        )
+        resp.raise_for_status()
