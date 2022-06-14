@@ -12,6 +12,7 @@ BASE_SECRET_PATH = str(Path.home()) + "/.vysacharity/"
 class SecretType(Enum):
     tokens = 1
     credentials = 2
+    categories = 3
 
 
 class TokenStatus(Enum):
@@ -21,12 +22,9 @@ class TokenStatus(Enum):
 
 
 def tokens_status():
-    path = BASE_SECRET_PATH + SecretType.tokens.name
-    if not os.path.exists(path):
+    tokens = _read_secrets(SecretType.tokens.name)
+    if tokens is None:
         return TokenStatus.NEED_NEW_REQUEST, None
-
-    with open(path, "r") as f:
-        tokens = json.load(f)
 
     now = datetime.now()
     access_token_expires_at = datetime.strptime(tokens["access_token_expires_at"], DATE_TIME_FORMAT)
@@ -40,11 +38,11 @@ def tokens_status():
 
 
 def get_credentials():
-    path = BASE_SECRET_PATH + SecretType.credentials.name
-    if not os.path.exists(path):
-        return None
-    with open(path, "r") as f:
-        return json.load(f)
+    return _read_secrets(SecretType.credentials.name)
+
+
+def get_categories():
+    return _read_secrets(SecretType.categories.name)
 
 
 def write_token(tokens):
@@ -55,8 +53,20 @@ def write_creds(creds):
     _write_secrets(SecretType.credentials.name, creds)
 
 
+def write_categories(categories):
+    _write_secrets(SecretType.categories.name, categories)
+
+
 def _write_secrets(secret_type, content):
     path = BASE_SECRET_PATH + secret_type
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(content, f, indent=2)
+
+
+def _read_secrets(secret_type):
+    path = BASE_SECRET_PATH + secret_type
+    if not os.path.exists(path):
+        return None
+    with open(path, "r") as f:
+        return json.load(f)

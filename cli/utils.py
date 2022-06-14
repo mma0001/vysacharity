@@ -1,3 +1,5 @@
+import json
+
 import click
 
 from thebase import utils, api
@@ -37,4 +39,23 @@ def init_client():
         token = tokens["access_token"]
     client.set_token(token)
 
+    click.echo("Getting categories...")
+    categories = client.categories.get()
+    categories_map = {}
+    for category in categories["categories"]:
+        categories_map[_get_category_abbrev(category["name"])] = category["category_id"]
+    utils.write_categories(categories_map)
+    click.echo("Categories saved!")
+    click.echo(json.dumps(categories_map, indent=2))
+
     return client
+
+
+def _get_category_abbrev(category):
+    words = category.split()
+    abbrev = ""
+    for w in words[1:]:
+        abbrev += w[0].upper()
+        for c in w[1:]:
+            abbrev += c if ord('A') <= ord(c) <= ord('Z') else ""
+    return abbrev

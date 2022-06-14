@@ -26,16 +26,18 @@ class Client:
         self._client_id = client_id
         self._client_secret = client_secret
         self.items = Items(self._base_url + "/items")
+        self.categories = Categories(self._base_url + "/categories")
 
     def set_token(self, token):
         self.items.set_token(token)
+        self.categories.set_token(token)
 
     def authorize(self):
         query = {
             "response_type": "code",
             "client_id": self._client_id,
             "redirect_uri": _REDIRECT_URI,
-            "scope": "write_items"
+            "scope": "write_items read_items"
         }
         url = self._base_url + "/oauth/authorize?" + urlencode(query)
         webbrowser.open(url, new=2)
@@ -79,13 +81,18 @@ class Client:
         }
 
 
-class Items:
+class Resources:
     def __init__(self, base_url):
         self._token = None
         self._base_url = base_url
 
     def set_token(self, token):
         self._token = token
+
+
+class Items(Resources):
+    def __init__(self, base_url):
+        super().__init__(base_url)
 
     def add(self, data):
         body = {
@@ -103,6 +110,35 @@ class Items:
                 "Authorization": f"bearer {self._token}"
             }
         )
-        print(resp.json())
+        resp.raise_for_status()
+        return resp.json()
+
+    def add_image(self, item_id, img_url):
+        body = {
+            "item_id": item_id,
+            "image_no": 1,
+            "image_url": img_url
+        }
+        resp = requests.post(
+            self._base_url + "/add_image",
+            data=body,
+            headers={
+                "Authorization": f"bearer {self._token}"
+            }
+        )
+        resp.raise_for_status()
+
+
+class Categories(Resources):
+    def __init__(self, base_url):
+        super().__init__(base_url)
+
+    def get(self):
+        resp = requests.get(
+            self._base_url,
+            headers={
+                "Authorization": f"bearer {self._token}"
+            }
+        )
         resp.raise_for_status()
         return resp.json()
