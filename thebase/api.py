@@ -7,8 +7,7 @@ from urllib.parse import urlencode, parse_qs, urlparse
 
 import requests
 
-from thebase.utils import DATE_TIME_FORMAT
-
+_DATE_TIME_FORMAT = "%y/%m/%d %H:%M:%S"
 _REDIRECT_URI = "http://localhost:8080"
 
 
@@ -77,9 +76,9 @@ class Client:
         refresh_token_expires_at = now + timedelta(days=29)
         return {
             "access_token": json_resp["access_token"],
-            "access_token_expires_at": access_token_expires_at.strftime(DATE_TIME_FORMAT),
+            "access_token_expires_at": access_token_expires_at.strftime(_DATE_TIME_FORMAT),
             "refresh_token": json_resp["refresh_token"],
-            "refresh_token_expires_at": refresh_token_expires_at.strftime(DATE_TIME_FORMAT)
+            "refresh_token_expires_at": refresh_token_expires_at.strftime(_DATE_TIME_FORMAT)
         }
 
 
