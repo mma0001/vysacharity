@@ -5,7 +5,7 @@ import click
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from bookinfo import google_cse
+from bookinfo import google_cse, google_books
 from thebase import api
 
 DATE_TIME_FORMAT = "%y/%m/%d %H:%M:%S"
@@ -33,6 +33,7 @@ class App:
 
         self.the_base_client = self._init_the_base_client(creds["the_base"])
         self.cse_image = self._init_cse_image(creds["google_cse"])
+        self.google_books = google_books.GoogleBooks()
 
     @staticmethod
     def _tokens_status():

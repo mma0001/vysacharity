@@ -5,5 +5,4 @@ from isbnlib import meta
 
 if __name__ == '__main__':
     # print(meta("978604-589243-5", service="goob"))
-    # app.cli()
-    cli.App().cli()
+    cli.cli()

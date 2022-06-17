@@ -144,20 +144,11 @@ class Categories(Resources):
         resp.raise_for_status()
         categories_map = {}
         for category in resp.json()["categories"]:
-            category_abbev = Categories._get_category_abbrev(category["name"])
-            categories_map[category_abbev] = category["category_id"]
+            categories_map[category["name"]] = category["category_id"]
 
-        return categories_map
-
-    @staticmethod
-    def _get_category_abbrev(category):
-        words = category.split()
-        abbrev = ""
-        for w in words[1:]:
-            abbrev += w[0].upper()
-            for c in w[1:]:
-                abbrev += c if ord('A') <= ord(c) <= ord('Z') else ""
-        return abbrev
+        ret = [{"name": c["name"], "id": c["category_id"]} for c in resp.json()["categories"]]
+        ret.sort(key=lambda k: k["id"])
+        return ret
 
 
 class ItemCategories(Resources):

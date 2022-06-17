@@ -17,4 +17,4 @@ class GoogleCSEImage:
         }
         resp = requests.get(self._base_url + urlencode(query))
         resp.raise_for_status()
-        return [item["link"] for item in resp.json()["items"]]
+        return [item["link"] for item in resp.json().get("items")]
