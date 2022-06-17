@@ -1,4 +1,5 @@
 import io
+import re
 
 from PIL import Image
 import click
@@ -25,8 +26,14 @@ def add():
     app = App()
     categories = app.the_base_client.categories.get()
 
+    # click.echo("Enter input file .txt, same directory as running script, format isbn,book_id")
+
     isbn = input("Enter ISBN: \n")
     simple_info = app.google_books.search_by_isbn(isbn)
+
+    book_id = input("Book ID: \n")
+    book_cat = re.sub(r'\d+', '', book_id)
+    book_cat_id = categories[book_cat]
 
     if simple_info is None:
         click.echo(f"Book {isbn} not found. Maybe try different ISBN format (ISBN10, ISBN13)?")
@@ -77,9 +84,12 @@ def add():
             "title": title,
             "detail": description
         })
+        item_id = resp["item"]["item_id"]
+
+        click.echo("Adding category to item...")
+        app.the_base_client.item_categories.add(item_id, book_cat_id)
 
         click.echo("Adding image to item...")
-        item_id = resp["item"]["item_id"]
         app.the_base_client.items.add_image(item_id, img_link)
 
-        click.echo("Done!")
+        click.echo("終了しました！")
