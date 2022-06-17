@@ -58,6 +58,7 @@ def add():
         while True:
             c = click.getchar()
             if c == 'y':
+                img_link = links[0]
                 break
             elif c == 'n':
                 click.echo("You can: (1) paste an image link or (2) continue without an image")
@@ -71,4 +72,14 @@ def add():
                         break
                 break
 
-        app.the_base_client.items.add()
+        click.echo("Creating item...")
+        resp = app.the_base_client.items.add({
+            "title": title,
+            "detail": description
+        })
+
+        click.echo("Adding image to item...")
+        item_id = resp["item"]["item_id"]
+        app.the_base_client.items.add_image(item_id, img_link)
+
+        click.echo("Done!")

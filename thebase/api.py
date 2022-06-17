@@ -127,6 +127,7 @@ class Items(Resources):
                 "Authorization": f"bearer {self._token}"
             }
         )
+        print(resp.json())
         resp.raise_for_status()
 
 
