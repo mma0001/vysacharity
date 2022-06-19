@@ -17,4 +17,6 @@ class GoogleCSEImage:
         }
         resp = requests.get(self._base_url + urlencode(query))
         resp.raise_for_status()
-        return [item["link"] for item in resp.json().get("items")]
+
+        items = resp.json().get("items")
+        return [item["link"] for item in items] if items is not None else None
