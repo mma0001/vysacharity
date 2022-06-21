@@ -89,7 +89,8 @@ def add():
         click.echo("Adding category to item...")
         app.the_base_client.item_categories.add(item_id, book_cat_id)
 
-        click.echo("Adding image to item...")
-        app.the_base_client.items.add_image(item_id, img_link)
+        if img_link is not None:
+            click.echo("Adding image to item...")
+            app.the_base_client.items.add_image(item_id, img_link)
 
         click.echo("終了しました！")
