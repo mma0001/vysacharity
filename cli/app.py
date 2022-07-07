@@ -1,12 +1,12 @@
 import json
 import os
-import click
 
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from bookinfo import google_cse, google_books
 from thebase import api
+from cli.utils import *
 
 DATE_TIME_FORMAT = "%y/%m/%d %H:%M:%S"
 BASE_SECRET_PATH = str(Path.home()) + "/.vysacharity/"
@@ -29,7 +29,7 @@ class App:
         if creds is None:
             creds = self.set_client_creds()
             App._write_secrets(SecretType.credentials.name, creds)
-            click.echo("Credentials saved!")
+            w("Credentials saved!")
 
         self.the_base_client = self._init_the_base_client(creds["the_base"])
         self.cse_image = self._init_cse_image(creds["google_cse"])
@@ -69,10 +69,10 @@ class App:
 
     @staticmethod
     def set_client_creds():
-        the_base_client_id = input("TheBase's client id: \n")
-        the_base_client_secret = input("TheBase's client secret: \n")
-        google_cse_id = input("Google CSE Id: \n")
-        google_cse_api_key = input("Google CSE API key: \n")
+        the_base_client_id = prompt("TheBase's client id:")
+        the_base_client_secret = prompt("TheBase's client secret:")
+        google_cse_id = prompt("Google CSE Id:")
+        google_cse_api_key = prompt("Google CSE API key:")
         return {
             "the_base": {
                 "client_id": the_base_client_id,
@@ -89,18 +89,18 @@ class App:
         client = api.Client(creds["client_id"], creds["client_secret"])
         tk_status, token = App._tokens_status()
         if tk_status == TokenStatus.NEED_NEW_REQUEST:
-            click.echo("Requesting authorization...")
+            w("Requesting authorization...")
             code = client.authorize()
-            click.echo("Getting tokens...")
+            w("Getting tokens...")
             tokens = client.access_token(code)
             App._write_secrets(SecretType.tokens.name, tokens)
-            click.echo("Tokens saved!")
+            w("Tokens saved!")
             token = tokens["access_token"]
         elif tk_status == TokenStatus.NEED_REFRESH:
-            click.echo("Refreshing tokens...")
+            w("Refreshing tokens...")
             tokens = client.refresh_token(token)
             App._write_secrets(SecretType.tokens.name, tokens)
-            click.echo("Tokens saved!")
+            w("Tokens saved!")
             token = tokens["access_token"]
         client.set_token(token)
 

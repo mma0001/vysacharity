@@ -1,6 +1,6 @@
 import io
 import re
-
+from cli.utils import *
 from PIL import Image
 import click
 import requests
@@ -23,15 +23,15 @@ def add():
     click.clear()
 
     # Setup resource providers
-    click.echo("Setting up application...")
+    w("Setting up application...")
     app = App()
     categories = app.the_base_client.categories.get()
 
     # Input: isbn,book_id
-    click.echo("Enter books to add, one line per book, follow this format: ISBN,Book_Id")
+    w("Enter books to add, one line per book, follow this format: ISBN,Book_Id")
     books_raw = click.edit()
     if books_raw is None:
-        click.echo("Input is empty, exit.")
+        w("Input is empty, exit.")
         exit(0)
 
     unprocessed_list = []
@@ -46,8 +46,7 @@ def add():
             _add_one(app, isbn, book_id, book_cat_id)
             unprocessed_list.remove(book_id)
         except Exception as e:
-            click.echo(f"Error processing book {book_id}: {e}", err=True)
-            click.echo()
+            w(f"Error processing book {book_id}: {e}")
 
     if len(unprocessed_list) > 0:
         click.echo("Here are unprocessed books:", err=True)
@@ -56,76 +55,83 @@ def add():
 
 
 def _add_one(app, isbn, book_id, cat_id):
-    click.echo("==========================================")
-    click.echo(f"Finding book [{book_id}] - ISBN:{isbn}...")
+    w(f"Finding book [{book_id}] - ISBN:{isbn}...")
     simple_info = app.google_books.search_by_isbn(isbn)
 
     if simple_info is None:
-        raise Exception(f"Book {isbn} not found. Maybe try different ISBN format (ISBN10, ISBN13)?")
-
-    click.echo()
-    title = simple_info["title"]
-    authors = simple_info["authors"]
-    click.echo(f"Title: {title}")
-    click.echo(f"Author(s): {', '.join(authors)}")
-
-    click.echo()
-    click.echo("Add or modify the description as you see fit, SAVE the text file before close it")
-    description = click.edit(simple_info['description'])
-    click.echo(f"Description: {description}")
-
-    click.echo()
-    img_link = simple_info.get("image")
-    if img_link is None:
-        click.echo("Finding book covers with Google image search...")
-        links = app.cse_image.search_for_links(f"{title} {authors[0]} books")
-
-        if links is None:
-            click.echo("No image found! You can: (1) paste an image link or (2) continue without an image")
-            while True:
-                c = click.getchar()
-                if c == '1':
-                    img_link = input("Image link: \n")
-                    break
-                elif c == '2':
-                    click.echo("Continuing without book cover")
-                    break
-
-        response = requests.get(links[0])
-        image_bytes = io.BytesIO(response.content)
-        img = Image.open(image_bytes)
-        img.show()
-
-        click.echo("Is this cover OK? (y)es/(n)o")
+        w(f"Book {isbn} not found. Do you want to submit manually? (y)es/(n)o")
         while True:
             c = click.getchar()
             if c == 'y':
-                img_link = links[0]
+                t = prompt("Enter book title:")
+                a = prompt("Enter book authors (if many, separated by commas (,):")
+                simple_info = {
+                    "title": t,
+                    "authors": a
+                }
+                simple_info["authors"] = simple_info["authors"].split(",")
                 break
             elif c == 'n':
-                click.echo("You can: (1) paste an image link or (2) continue without an image")
-                while True:
-                    c = click.getchar()
-                    if c == '1':
-                        img_link = input("Image link: \n")
-                        break
-                    elif c == '2':
-                        click.echo("Continuing without book cover")
-                        break
-                break
+                raise Exception(f"Book {isbn} will be put into unprocessed list.")
 
-        click.echo("Creating item...")
-        resp = app.the_base_client.items.add({
-            "title": f"[{book_id}] {title}",
-            "detail": description
-        })
-        item_id = resp["item"]["item_id"]
+    title = simple_info["title"]
+    authors = simple_info["authors"]
 
-        click.echo("Adding category to item...")
-        app.the_base_client.item_categories.add(item_id, cat_id)
+    w("Add or modify the description as you see fit, SAVE the text file before close it")
+    description = click.edit(simple_info.get("description"))
 
-        if img_link is not None:
-            click.echo("Adding image to item...")
-            app.the_base_client.items.add_image(item_id, img_link)
+    img_link = simple_info.get("image")
+    if img_link is None:
+        img_link = _search_for_book_cover(app, title, authors)
 
-        click.echo("終了しました！")
+    w("Creating item...")
+    resp = app.the_base_client.items.add({
+        "title": f"[{book_id}] {title}",
+        "detail": description
+    })
+    item_id = resp["item"]["item_id"]
+
+    w("Adding category to item...")
+    app.the_base_client.item_categories.add(item_id, cat_id)
+
+    if img_link is not None:
+        w("Adding image to item...")
+        app.the_base_client.items.add_image(item_id, img_link)
+
+    w("終了しました！")
+
+
+def _search_for_book_cover(app, title, authors):
+    w("Finding book covers with Google image search...")
+    links = app.cse_image.search_for_links(f"{title} {authors[0]} books")
+    if links is None:
+        return _manual_image_link("No image found! ")
+
+    img_link = links[0]
+    _show_img(img_link)
+
+    w("Is this cover OK? (y)es/(n)o")
+    while True:
+        c = click.getchar()
+        if c == 'y':
+            return img_link
+        elif c == 'n':
+            return _manual_image_link()
+
+
+def _manual_image_link(pre_msg=""):
+    w(f"{pre_msg}You can: (1) paste an image link or (2) continue without an image")
+    while True:
+        c = click.getchar()
+        if c == '1':
+            return prompt("Image link:")
+        elif c == '2':
+            w("Continuing without book cover")
+            return
+
+
+def _show_img(img_link):
+    response = requests.get(img_link)
+    image_bytes = io.BytesIO(response.content)
+    img = Image.open(image_bytes)
+    img.show()
