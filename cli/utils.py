@@ -1,15 +1,14 @@
-import time
-
 import click
 
 
-def w(msg):
+def w(*msgs):
     cl()
-    click.echo(msg, nl=False)
+    click.echo("\n".join(msgs), nl=False)
 
 
 def cl():
-    click.echo("\x1b[2K\r", nl=False)
+    click.clear()
+    # click.echo("\x1b[2K\r", nl=False)
 
 
 def prompt(msg):

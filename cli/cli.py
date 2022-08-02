@@ -8,6 +8,9 @@ import requests
 from cli.app import App
 
 
+fq_title = None
+
+
 @click.group()
 def cli():
     pass
@@ -77,32 +80,35 @@ def _add_one(app, isbn, book_id, cat_id):
     title = simple_info["title"]
     authors = simple_info["authors"]
 
-    w("Add or modify the description as you see fit, SAVE the text file before close it")
+    global fq_title
+    fq_title = f"[{book_id}] {title}"
+
+    w(fq_title, "Add or modify the description as you see fit, SAVE the text file before close it")
     description = click.edit(simple_info.get("description"))
 
     img_link = simple_info.get("image")
     if img_link is None:
         img_link = _search_for_book_cover(app, title, authors)
 
-    w("Creating item...")
+    w(fq_title, "Creating item...")
     resp = app.the_base_client.items.add({
         "title": f"[{book_id}] {title}",
         "detail": description
     })
     item_id = resp["item"]["item_id"]
 
-    w("Adding category to item...")
+    w(fq_title, "Adding category to item...")
     app.the_base_client.item_categories.add(item_id, cat_id)
 
     if img_link is not None:
         w("Adding image to item...")
         app.the_base_client.items.add_image(item_id, img_link)
 
-    w("終了しました！")
+    w(fq_title, "終了しました！")
 
 
 def _search_for_book_cover(app, title, authors):
-    w("Finding book covers with Google image search...")
+    w(fq_title, "Finding book covers with Google image search...")
     links = app.cse_image.search_for_links(f"{title} {authors[0]} books")
     if links is None:
         return _manual_image_link("No image found! ")
@@ -110,7 +116,7 @@ def _search_for_book_cover(app, title, authors):
     img_link = links[0]
     _show_img(img_link)
 
-    w("Is this cover OK? (y)es/(n)o")
+    w(fq_title, "Is this cover OK? (y)es/(n)o")
     while True:
         c = click.getchar()
         if c == 'y':
@@ -120,13 +126,13 @@ def _search_for_book_cover(app, title, authors):
 
 
 def _manual_image_link(pre_msg=""):
-    w(f"{pre_msg}You can: (1) paste an image link or (2) continue without an image")
+    w(fq_title, f"{pre_msg}You can: (1) paste an image link or (2) continue without an image")
     while True:
         c = click.getchar()
         if c == '1':
             return prompt("Image link:")
         elif c == '2':
-            w("Continuing without book cover")
+            w(fq_title, "Continuing without book cover")
             return
 
 
