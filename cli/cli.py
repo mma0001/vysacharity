@@ -38,6 +38,7 @@ def add():
         exit(0)
 
     unprocessed_list = []
+    successful_list = []
     for book_raw in books_raw.splitlines():
         split = [s.strip() for s in book_raw.split(",")]
         isbn = split[0]
@@ -46,8 +47,9 @@ def add():
         book_cat = re.sub(r'\d+', '', book_id)
         book_cat_id = categories[book_cat]
         try:
-            _add_one(app, isbn, book_id, book_cat_id)
+            isbn, book_id, title, description, authors, has_img = _add_one(app, isbn, book_id, book_cat_id)
             unprocessed_list.remove(book_id)
+            successful_list.append(f"{isbn},{book_id},{title},{description},{authors},{has_img}")
         except Exception as e:
             w(f"Error processing book {book_id}: {e}")
 
@@ -55,6 +57,8 @@ def add():
         click.echo("Here are unprocessed books:", err=True)
         for unprocessed_book in unprocessed_list:
             click.echo(unprocessed_book, err=True)
+
+    click.edit("\n".join(successful_list))
 
 
 def _add_one(app, isbn, book_id, cat_id):
@@ -105,6 +109,7 @@ def _add_one(app, isbn, book_id, cat_id):
         app.the_base_client.items.add_image(item_id, img_link)
 
     w(fq_title, "終了しました！")
+    return isbn, book_id, title, description.replace("\n", " "), " & ".join(authors), "x" if img_link else ""
 
 
 def _search_for_book_cover(app, title, authors):
