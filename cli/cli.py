@@ -49,7 +49,7 @@ def add():
         try:
             isbn, book_id, title, description, authors, has_img = _add_one(app, isbn, book_id, book_cat_id)
             unprocessed_list.remove(book_id)
-            successful_list.append(f"{isbn},{book_id},{title},{description},{authors},{has_img}")
+            successful_list.append(f"{isbn};{book_id};{title};{description};{authors};{has_img}")
         except Exception as e:
             w(f"Error processing book {book_id}: {e}")
 
